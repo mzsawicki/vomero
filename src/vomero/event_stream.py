@@ -13,10 +13,14 @@ class Streams:
     def __init__(self, **kwargs):
         self._redis = redis.Redis(**kwargs)
 
-    async def create_consumer_group(self, stream: str, consumer_group_name: str, last_id: int = 0) -> None:
-        await self._redis.xgroup_create(stream, consumer_group_name, last_id, mkstream=True)
+    async def create_consumer_group(
+        self, stream: str, consumer_group_name: str, last_id: int = 0
+    ) -> None:
+        await self._redis.xgroup_create(
+            stream, consumer_group_name, last_id, mkstream=True
+        )
 
-    def producer(self, stream: str) -> typing.Callable[[ProducerCoro],ProducerCoro]:
+    def producer(self, stream: str) -> typing.Callable[[ProducerCoro], ProducerCoro]:
         def wrapper_decorator(producer_coro: ProducerCoro) -> ProducerCoro:
             @functools.wraps(producer_coro)
             async def wrapper_producer(*args, **kwargs) -> Event:
@@ -32,8 +36,10 @@ class Streams:
         def consumer_decorator(consumer_coro: ConsumerCoro) -> ConsumerCoro:
             @functools.wraps(consumer_coro)
             async def wrapper_consumer(*args, **kwargs) -> typing.Any:
-                redis_response = await self._consume_event(stream, consumer_group, consumer, block)
-                record = redis_response.pop()
+                response = await self._consume_event(
+                    stream, consumer_group, consumer, block
+                )
+                record = response.pop()
                 _, entry = record
                 id_, event = entry.pop()
                 coro_result = await consumer_coro(event, *args, **kwargs)
@@ -47,16 +53,16 @@ class Streams:
     async def _produce_event(self, stream: str, event: Event) -> None:
         await self._redis.xadd(stream, event)
 
-    async def _consume_event(self, stream: str, consumer_group: str, consumer: str, block: int = 0) -> typing.List:
+    async def _consume_event(
+        self, stream: str, consumer_group: str, consumer: str, block: int = 0
+    ) -> typing.List:
         return await self._redis.xreadgroup(
-            consumer_group,
-            consumer,
-            {stream: ">"},
-            count=1,
-            block=block
+            consumer_group, consumer, {stream: ">"}, count=1, block=block
         )
 
-    async def _acknowledge(self, stream: str, consumer_group: str, entry_id: bytes) -> None:
+    async def _acknowledge(
+        self, stream: str, consumer_group: str, entry_id: bytes
+    ) -> None:
         await self._redis.xack(stream, consumer_group, entry_id)
 
     async def close(self) -> None:

@@ -9,7 +9,9 @@ async def send_message(message: str) -> Event:
     return {"message": message}
 
 
-@streams.consumer(stream="example-stream", consumer_group="example-group", consumer="example-consumer")
+@streams.consumer(
+    stream="example-stream", consumer_group="example-group", consumer="example-consumer"
+)
 async def print_message(event: Event) -> None:
     print(event)
 
