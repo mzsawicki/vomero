@@ -1,6 +1,6 @@
 import typing
 
-from src.vomero import Event, EventStream
+from src.vomero import Event, Client
 
 
 class ExampleEvent(Event):
@@ -15,14 +15,14 @@ class ExampleEvent(Event):
         return ExampleEvent(dict_["message"])
 
 
-stream = EventStream("example_stream")
+client = Client()
 
 
-@stream.producer
+@client.producer("example_stream")
 async def send_message(message: str) -> Event:
     return ExampleEvent(message)
 
 
 async def test_transport():
     await send_message("Hello World!")
-    await stream.close()
+    await client.close()

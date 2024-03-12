@@ -1,1 +1,1 @@
-from .event_stream import Event, EventStream
+from .event_stream import Event, Client

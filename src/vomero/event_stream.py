@@ -17,26 +17,30 @@ class Event(metaclass=abc.ABCMeta):
         pass
 
 
-class EventStream:
-    def __init__(self, stream: str, consumer_group: typing.Optional[str] = None, **kwargs):
+class Client:
+    def __init__(self, **kwargs):
         self._redis = redis.Redis(**kwargs)
-        self._stream = stream
-        self._consumer_group = consumer_group
 
-    def producer(
-        self,
-        producer_func: typing.Callable[..., typing.Awaitable[Event]],
-    ) -> typing.Callable[..., typing.Awaitable[Event]]:
-        @functools.wraps(producer_func)
-        async def wrapper_producer(*args, **kwargs) -> Event:
-            event = await producer_func(*args, **kwargs)
-            await self.produce_event(event)
-            return event
-        return wrapper_producer
+    def producer(self, stream: str) -> typing.Callable[
+        [typing.Callable[..., typing.Awaitable[Event]]],
+        typing.Callable[..., typing.Awaitable[Event]],
+    ]:
+        def wrapper_decorator(
+            producer_func: typing.Callable[..., typing.Awaitable[Event]]
+        ) -> typing.Callable[..., typing.Awaitable[Event]]:
+            @functools.wraps(producer_func)
+            async def wrapper_producer(*args, **kwargs) -> Event:
+                event = await producer_func(*args, **kwargs)
+                await self.produce_event(stream, event)
+                return event
 
-    async def produce_event(self, event: Event) -> None:
+            return wrapper_producer
+
+        return wrapper_decorator
+
+    async def produce_event(self, stream: str, event: Event) -> None:
         event_data = event.serialize()
-        await self._redis.xadd(self._stream, event_data)
+        await self._redis.xadd(stream, event_data)
 
     async def close(self) -> None:
         await self._redis.close()
