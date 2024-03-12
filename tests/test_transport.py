@@ -1,28 +1,21 @@
-import typing
-
-from src.vomero import Event, Client
+from src.vomero import Streams, Event
 
 
-class ExampleEvent(Event):
-    def __init__(self, message: str):
-        self._message = message
-
-    def serialize(self) -> typing.Dict[str, typing.Any]:
-        return {"message": self._message}
-
-    @classmethod
-    def deserialize(cls, dict_: typing.Dict[str, typing.Any]):
-        return ExampleEvent(dict_["message"])
+streams = Streams()
 
 
-client = Client()
-
-
-@client.producer("example_stream")
+@streams.producer(stream="example-stream")
 async def send_message(message: str) -> Event:
-    return ExampleEvent(message)
+    return {"message": message}
+
+
+@streams.consumer(stream="example-stream", consumer_group="example-group", consumer="example-consumer")
+async def print_message(event: Event) -> None:
+    print(event)
 
 
 async def test_transport():
+    # await client.create_consumer_group("example-stream", "example-group")
     await send_message("Hello World!")
-    await client.close()
+    await print_message()
+    await streams.close()
