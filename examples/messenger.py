@@ -46,4 +46,7 @@ async def main():
     await streams.close()
 
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except KeyboardInterrupt:
+    asyncio.run(streams.close())
