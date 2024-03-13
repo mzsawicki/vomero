@@ -6,7 +6,7 @@ import redis.asyncio as redis
 Field: typing.TypeAlias = typing.Union[bytes, memoryview, str, int, float]
 Event: typing.TypeAlias = typing.Dict[Field, Field]
 ProducerCoro: typing.TypeAlias = typing.Callable[..., typing.Awaitable[Event]]
-ConsumerCoro: typing.TypeAlias = typing.Callable[[Event, ...], ...]
+ConsumerCoro: typing.TypeAlias = typing.Callable[..., ...]
 
 
 class Streams:
@@ -48,7 +48,7 @@ class Streams:
                     coro_result = await consumer_coro(event, *args, **kwargs)
                     await self._acknowledge(stream, consumer_group, id_)
                 else:
-                    coro_result = await consumer_coro({}, *args, **kwargs)
+                    coro_result = await consumer_coro(*args, **kwargs)
                 return coro_result
 
             return wrapper_consumer

@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 import datetime
+import typing
 
 import aioconsole
 
@@ -17,7 +18,9 @@ async def send_message(user: str, message: str) -> Event:
 
 
 @streams.consumer(stream="messages", consumer_group=user_id, consumer=user_id)
-async def print_message(event: Event) -> None:
+async def print_message(event: typing.Optional[Event] = None) -> None:
+    if not event:
+        return
     user = event["user"]
     message = event["message"]
     time = event["time"]
