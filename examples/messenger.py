@@ -1,6 +1,5 @@
 import asyncio
 import uuid
-
 import datetime
 
 import aioconsole
@@ -10,7 +9,6 @@ from src.vomero import Streams, Event
 streams = Streams(decode_responses=True)
 
 user_id = str(uuid.uuid4())
-user_name = "John Doe"
 
 
 @streams.producer(stream="messages")
@@ -27,10 +25,10 @@ async def print_message(event: Event) -> None:
     user = event["user"]
     message = event["message"]
     time = event["time"]
-    await aioconsole.aprint(f"[{time}] {user} says: {message}\r")
+    await aioconsole.aprint(f"[{time}] {user} says: {message}", end="\n")
 
 
-async def async_input():
+async def async_input(user_name: str):
     while True:
         input_ = await aioconsole.ainput()
         await send_message(user_name, input_)
@@ -42,9 +40,11 @@ async def read_messages():
 
 
 async def main():
+    user_name = await aioconsole.ainput("Choose your name: > ")
     await aioconsole.aprint(f"Chatting as {user_name}")
     await streams.create_consumer_group("messages", user_id)
-    await asyncio.gather(read_messages(), async_input())
+    await asyncio.gather(read_messages(), async_input(user_name))
+    await streams.close()
 
 
 asyncio.run(main())
