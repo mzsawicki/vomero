@@ -32,23 +32,28 @@ class Streams:
 
         return wrapper_decorator
 
-    def consumer(self, stream: str, consumer_group: str, consumer: str, block: int = 0):
-        def consumer_decorator(consumer_coro: ConsumerCoro) -> ConsumerCoro:
+    def consumer(
+        self, stream: str, consumer_group: str, consumer: str, block: int = 0
+    ) -> typing.Callable[[ConsumerCoro], ConsumerCoro]:
+        def wrapper_decorator(consumer_coro: ConsumerCoro) -> ConsumerCoro:
             @functools.wraps(consumer_coro)
             async def wrapper_consumer(*args, **kwargs) -> typing.Any:
                 response = await self._consume_event(
                     stream, consumer_group, consumer, block
                 )
-                record = response.pop()
-                _, entry = record
-                id_, event = entry.pop()
-                coro_result = await consumer_coro(event, *args, **kwargs)
-                await self._acknowledge(stream, consumer_group, id_)
+                if response:
+                    record = response.pop()
+                    _, entry = record
+                    id_, event = entry.pop()
+                    coro_result = await consumer_coro(event, *args, **kwargs)
+                    await self._acknowledge(stream, consumer_group, id_)
+                else:
+                    coro_result = await consumer_coro({}, *args, **kwargs)
                 return coro_result
 
             return wrapper_consumer
 
-        return consumer_decorator
+        return wrapper_decorator
 
     async def _produce_event(self, stream: str, event: Event) -> None:
         await self._redis.xadd(stream, event)

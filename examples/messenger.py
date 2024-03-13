@@ -13,11 +13,7 @@ user_id = str(uuid.uuid4())
 
 @streams.producer(stream="messages")
 async def send_message(user: str, message: str) -> Event:
-    return {
-        "user": user,
-        "message": message,
-        "time": str(datetime.datetime.now())
-    }
+    return {"user": user, "message": message, "time": str(datetime.datetime.now())}
 
 
 @streams.consumer(stream="messages", consumer_group=user_id, consumer=user_id)
