@@ -11,16 +11,20 @@ async def send_message(message: str) -> Event:
     return {
         "time": str(datetime.datetime(2024, 2, 22, 12)),
         "message": message,
-        "author": "Test author"
+        "author": "Test author",
     }
 
 
-@streams.consumer(stream="test-stream", consumer_group="test-group", consumer="test-consumer")
+@streams.consumer(
+    stream="test-stream", consumer_group="test-group", consumer="test-consumer"
+)
 async def consume_and_fail(event: typing.Optional[Event] = None) -> None:
     raise KeyError
 
 
-@streams.consumer(stream="test-stream", consumer_group="test-group", consumer="test-consumer")
+@streams.consumer(
+    stream="test-stream", consumer_group="test-group", consumer="test-consumer"
+)
 async def consume_and_succeed(event: typing.Optional[Event] = None) -> str:
     return event["message"]
 

@@ -55,6 +55,12 @@ class Streams:
 
         return wrapper_decorator
 
+    async def close(self) -> None:
+        await self._redis.close()
+
+    async def remove_consumer_group(self, stream: str, consumer_group: str) -> None:
+        await self._redis.xgroup_destroy(stream, consumer_group)
+
     async def _produce_event(self, stream: str, event: Event) -> None:
         await self._redis.xadd(stream, event)
 
@@ -69,9 +75,3 @@ class Streams:
         self, stream: str, consumer_group: str, entry_id: bytes
     ) -> None:
         await self._redis.xack(stream, consumer_group, entry_id)
-
-    async def close(self) -> None:
-        await self._redis.close()
-
-    async def remove_consumer_group(self, stream: str, consumer_group: str) -> None:
-        await self._redis.xgroup_destroy(stream, consumer_group)
