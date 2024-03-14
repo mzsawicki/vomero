@@ -72,3 +72,6 @@ class Streams:
 
     async def close(self) -> None:
         await self._redis.close()
+
+    async def remove_consumer_group(self, stream: str, consumer_group: str) -> None:
+        await self._redis.xgroup_destroy(stream, consumer_group)
