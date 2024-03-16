@@ -9,6 +9,9 @@ ProducerCoro: typing.TypeAlias = typing.Callable[..., typing.Awaitable[Event]]
 ConsumerCoro: typing.TypeAlias = typing.Callable[..., ...]
 
 
+MAX_STREAM_LEN_DEFAULT = 1024
+
+
 class Streams:
     def __init__(self, **kwargs):
         self._redis = redis.Redis(**kwargs)
@@ -20,12 +23,17 @@ class Streams:
             stream, consumer_group_name, last_id, mkstream=True
         )
 
-    def producer(self, stream: str) -> typing.Callable[[ProducerCoro], ProducerCoro]:
+    def producer(
+        self,
+        stream: str,
+        max_len: int = MAX_STREAM_LEN_DEFAULT,
+        max_len_approximate: bool = True,
+    ) -> typing.Callable[[ProducerCoro], ProducerCoro]:
         def wrapper_decorator(producer_coro: ProducerCoro) -> ProducerCoro:
             @functools.wraps(producer_coro)
             async def wrapper_producer(*args, **kwargs) -> Event:
                 event = await producer_coro(*args, **kwargs)
-                await self._produce_event(stream, event)
+                await self._produce_event(stream, max_len, max_len_approximate, event)
                 return event
 
             return wrapper_producer
@@ -55,14 +63,42 @@ class Streams:
 
         return wrapper_decorator
 
+    async def trim_to_max_len(
+        self, stream: str, max_len: int, approximate: bool = True
+    ) -> None:
+        await self._redis.xtrim(stream, maxlen=max_len, approximate=approximate)
+
+    async def trim_to_min_id(
+        self, stream: str, min_id: str, approximate: bool = True
+    ) -> None:
+        await self._redis.xtrim(stream, minid=min_id, approximate=approximate)
+
+    async def open(self) -> None:
+        await self._redis.initialize()
+
     async def close(self) -> None:
         await self._redis.close()
 
     async def remove_consumer_group(self, stream: str, consumer_group: str) -> None:
         await self._redis.xgroup_destroy(stream, consumer_group)
 
-    async def _produce_event(self, stream: str, event: Event) -> None:
-        await self._redis.xadd(stream, event)
+    async def get_events_range(
+        self,
+        stream: str,
+        start: typing.Optional[str] = None,
+        end: typing.Optional[str] = None,
+    ) -> typing.List[typing.Tuple[typing.Union[str, bytes], Event]]:
+        start_id = start or "-"
+        end_id = end or "+"
+        response = await self._redis.xrange(stream, start_id, end_id)
+        return response
+
+    async def _produce_event(
+        self, stream: str, max_len: int, max_len_approximate: bool, event: Event
+    ) -> None:
+        await self._redis.xadd(
+            stream, event, maxlen=max_len, approximate=max_len_approximate
+        )
 
     async def _consume_event(
         self, stream: str, consumer_group: str, consumer: str, block: int = 0

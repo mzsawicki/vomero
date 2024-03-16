@@ -1,1 +1,1 @@
-from .event_stream import Event, Streams
+from .streams import Event, Streams
