@@ -3,6 +3,7 @@ import typing
 
 import redis.asyncio as redis
 
+IdType: typing.TypeAlias = typing.Union[str, bytes]
 Field: typing.TypeAlias = typing.Union[bytes, memoryview, str, int, float]
 Event: typing.TypeAlias = typing.Dict[Field, Field]
 ProducerCoro: typing.TypeAlias = typing.Callable[..., typing.Awaitable[Event]]
@@ -53,29 +54,18 @@ class Streams:
         def wrapper_decorator(consumer_coro: ConsumerCoro) -> ConsumerCoro:
             @functools.wraps(consumer_coro)
             async def wrapper_consumer(*args, **kwargs) -> typing.Any:
-                event_received = False
+                id_, event = None, None
                 if auto_claim:
-                    response = await self._auto_claim_pending_entry(
+                    id_, event = await self._auto_claim_pending_entry(
                         stream, consumer_group, consumer, auto_claim_timeout
                     )
-                    _, record, _ = response
-                    if record:
-                        id_, event = record.pop()
-                        event_received = True
-                if not event_received:
-                    response = await self._read_next_entry(
+                if id_ is None:
+                    id_, event = await self._read_next_entry(
                         stream, consumer_group, consumer, block
                     )
-                    if response:
-                        record = response.pop()
-                        _, entry = record
-                        id_, event = entry.pop()
-                        event_received = True
-                if event_received:
-                    coro_result = await consumer_coro(event, *args, **kwargs)
+                coro_result = await consumer_coro(event, *args, **kwargs)
+                if id_ is not None:
                     await self._acknowledge(stream, consumer_group, id_)
-                else:
-                    coro_result = await consumer_coro(*args, **kwargs)
 
                 return coro_result
 
@@ -129,19 +119,30 @@ class Streams:
 
     async def _auto_claim_pending_entry(
         self, stream: str, consumer_group: str, consumer: str, timeout: int
-    ) -> typing.List[typing.Any]:
-        entry = await self._redis.xautoclaim(
+    ) -> typing.Tuple[typing.Optional[IdType], typing.Optional[Event]]:
+        response = await self._redis.xautoclaim(
             stream, consumer_group, consumer, timeout, count=1
         )
-        return entry
+        _, record, _ = response
+        if record:
+            id_, event = record.pop()
+            return id_, event
+        else:
+            return None, None
 
     async def _read_next_entry(
         self, stream: str, consumer_group: str, consumer: str, block: int
-    ) -> typing.List[typing.Any]:
-        entry = await self._redis.xreadgroup(
+    ) -> typing.Tuple[typing.Optional[IdType], typing.Optional[Event]]:
+        response = await self._redis.xreadgroup(
             consumer_group, consumer, {stream: ">"}, count=1, block=block
         )
-        return entry
+        if response:
+            record = response.pop()
+            _, entry = record
+            id_, event = entry.pop()
+            return id_, event
+        else:
+            return None, None
 
     async def _acknowledge(
         self, stream: str, consumer_group: str, entry_id: bytes
