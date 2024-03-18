@@ -23,14 +23,23 @@ async def consume_and_fail(event: typing.Optional[Event] = None) -> None:
 
 
 @streams.consumer(
-    stream="test-stream", consumer_group="test-group", consumer="test-consumer"
+    stream="test-stream",
+    consumer_group="test-group",
+    consumer="test-consumer-2",
+    auto_claim=True,
+    auto_claim_timeout=1,
+    block=1
 )
-async def consume_and_succeed(event: typing.Optional[Event] = None) -> str:
-    return event["message"]
+async def consume_and_succeed(event: typing.Optional[Event] = None) -> typing.Optional[str]:
+    if event:
+        return event["message"]
+    else:
+        return None
 
 
 async def test_failure_and_recovery():
-    await streams.remove_consumer_group("test-stream", "test-group")
+    await streams.open()
+    await streams.flush_all()
     await streams.create_consumer_group("test-stream", "test-group")
     await send_message("Failing message")
     try:

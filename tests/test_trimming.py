@@ -23,7 +23,7 @@ async def read_event(event: typing.Optional[Event] = None) -> Event:
 
 async def test_max_len_trimming():
     await streams.open()
-    await streams.remove_consumer_group("trimming-test-stream", "trimming-test-group")
+    await streams.flush_all()
     await streams.create_consumer_group("trimming-test-stream", "trimming-test-group")
     for _ in range(25):
         await send_random_event()
@@ -40,7 +40,7 @@ async def test_max_len_trimming():
 
 async def test_manual_max_len_trimming():
     await streams.open()
-    await streams.remove_consumer_group("trimming-test-stream", "trimming-test-group")
+    await streams.flush_all()
     await streams.create_consumer_group("trimming-test-stream", "trimming-test-group")
     for _ in range(10):
         await send_random_event()
@@ -59,7 +59,7 @@ async def test_manual_max_len_trimming():
 
 async def test_manual_min_id_trimming():
     await streams.open()
-    await streams.remove_consumer_group("trimming-test-stream", "trimming-test-group")
+    await streams.flush_all()
     await streams.create_consumer_group("trimming-test-stream", "trimming-test-group")
     for _ in range(10):
         await send_random_event()

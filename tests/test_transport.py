@@ -17,7 +17,8 @@ async def check_message(event: Event) -> None:
 
 
 async def test_transport():
-    await streams.remove_consumer_group("example-stream", "example-group")
+    await streams.open()
+    await streams.flush_all()
     await streams.create_consumer_group("example-stream", "example-group")
     await send_message("Hello World!")
     await check_message()
