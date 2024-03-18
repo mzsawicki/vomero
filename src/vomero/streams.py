@@ -42,21 +42,30 @@ class Streams:
         return wrapper_decorator
 
     def consumer(
-        self, stream: str, consumer_group: str, consumer: str, block: int = 0,
-        auto_claim: bool = False, auto_claim_timeout: int = AUTO_CLAIM_TIMEOUT_DEFAULT
+        self,
+        stream: str,
+        consumer_group: str,
+        consumer: str,
+        block: int = 0,
+        auto_claim: bool = False,
+        auto_claim_timeout: int = AUTO_CLAIM_TIMEOUT_DEFAULT,
     ) -> typing.Callable[[ConsumerCoro], ConsumerCoro]:
         def wrapper_decorator(consumer_coro: ConsumerCoro) -> ConsumerCoro:
             @functools.wraps(consumer_coro)
             async def wrapper_consumer(*args, **kwargs) -> typing.Any:
                 event_received = False
                 if auto_claim:
-                    response = await self._auto_claim_pending_entry(stream, consumer_group, consumer, auto_claim_timeout)
+                    response = await self._auto_claim_pending_entry(
+                        stream, consumer_group, consumer, auto_claim_timeout
+                    )
                     _, record, _ = response
                     if record:
                         id_, event = record.pop()
                         event_received = True
                 if not event_received:
-                    response = await self._read_next_entry(stream, consumer_group, consumer, block)
+                    response = await self._read_next_entry(
+                        stream, consumer_group, consumer, block
+                    )
                     if response:
                         record = response.pop()
                         _, entry = record
@@ -118,13 +127,17 @@ class Streams:
             stream, event, maxlen=max_len, approximate=max_len_approximate
         )
 
-    async def _auto_claim_pending_entry(self, stream: str, consumer_group: str, consumer: str, timeout: int)\
-            -> typing.List[typing.Any]:
-        entry = await self._redis.xautoclaim(stream, consumer_group, consumer, timeout, count=1)
+    async def _auto_claim_pending_entry(
+        self, stream: str, consumer_group: str, consumer: str, timeout: int
+    ) -> typing.List[typing.Any]:
+        entry = await self._redis.xautoclaim(
+            stream, consumer_group, consumer, timeout, count=1
+        )
         return entry
 
-    async def _read_next_entry(self, stream: str, consumer_group: str, consumer: str, block: int)\
-            -> typing.List[typing.Any]:
+    async def _read_next_entry(
+        self, stream: str, consumer_group: str, consumer: str, block: int
+    ) -> typing.List[typing.Any]:
         entry = await self._redis.xreadgroup(
             consumer_group, consumer, {stream: ">"}, count=1, block=block
         )

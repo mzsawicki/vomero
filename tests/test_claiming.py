@@ -29,7 +29,7 @@ async def consume_and_fail(event: typing.Optional[Event] = None) -> None:
     consumer="success-consumer",
     auto_claim=True,
     auto_claim_timeout=60000,
-    block=1
+    block=1,
 )
 async def consume_and_succeed(event: typing.Optional[Event] = None) -> bool:
     if event is not None:
@@ -59,12 +59,19 @@ async def test_claiming_long_pending_event():
     stop_time = datetime.datetime.now()
     time_elapsed = (stop_time - start_time).seconds
 
-    pending_events_count = await streams.get_pending_events_count("claiming-test-stream", "claiming-test-group")
+    pending_events_count = await streams.get_pending_events_count(
+        "claiming-test-stream", "claiming-test-group"
+    )
     are_there_pending_events = pending_events_count > 0
 
     minute_elapsed = time_elapsed >= 60
 
     await streams.close()
 
-    success = first_consumer_failed and event_consumed and not are_there_pending_events and minute_elapsed
+    success = (
+        first_consumer_failed
+        and event_consumed
+        and not are_there_pending_events
+        and minute_elapsed
+    )
     assert success

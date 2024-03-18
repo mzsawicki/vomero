@@ -28,9 +28,11 @@ async def consume_and_fail(event: typing.Optional[Event] = None) -> None:
     consumer="test-consumer-2",
     auto_claim=True,
     auto_claim_timeout=1,
-    block=1
+    block=1,
 )
-async def consume_and_succeed(event: typing.Optional[Event] = None) -> typing.Optional[str]:
+async def consume_and_succeed(
+    event: typing.Optional[Event] = None,
+) -> typing.Optional[str]:
     if event:
         return event["message"]
     else:
