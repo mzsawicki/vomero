@@ -3,12 +3,7 @@ import typing
 
 import redis.asyncio as redis
 
-IdType: typing.TypeAlias = typing.Union[str, bytes]
-Field: typing.TypeAlias = typing.Union[bytes, memoryview, str, int, float]
-Event: typing.TypeAlias = typing.Dict[Field, Field]
-ProducerCoro: typing.TypeAlias = typing.Callable[..., typing.Awaitable[Event]]
-ConsumerCoro: typing.TypeAlias = typing.Callable[..., ...]
-
+from src.vomero.types import IdType, ProducerCoro, ConsumerCoro, Event
 
 MAX_STREAM_LEN_DEFAULT = 1024
 AUTO_CLAIM_TIMEOUT_DEFAULT = 60
