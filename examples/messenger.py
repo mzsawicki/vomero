@@ -18,7 +18,9 @@ async def send_message(user: str) -> Event:
     return {"user": user, "message": input_, "time": str(datetime.datetime.now())}
 
 
-@streams.consumer(stream="messages", consumer_group=user_id, consumer=user_id, block=1000)
+@streams.consumer(
+    stream="messages", consumer_group=user_id, consumer=user_id, block=1000
+)
 async def print_message(event: typing.Optional[Event] = None) -> None:
     if event:
         user = event["user"]
@@ -32,8 +34,7 @@ async def main():
     await aioconsole.aprint(f"Chatting as {user_name}")
     await streams.create_consumer_group("messages", user_id)
     await asyncio.gather(
-        run_as_worker(print_message),
-        run_as_worker(send_message, user_name)
+        run_as_worker(print_message), run_as_worker(send_message, user_name)
     )
     await streams.close()
 
