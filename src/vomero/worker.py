@@ -1,13 +1,16 @@
 import asyncio
 import functools
 import signal
+import typing
 
 from src.vomero.types import ConsumerCoro
 
 
 class Worker:
     def __init__(
-        self, coro_partial: functools.partial, loop: asyncio.AbstractEventLoop
+        self,
+        coro_partial: functools.partial[typing.Any],
+        loop: asyncio.AbstractEventLoop,
     ):
         self._coro = coro_partial
         self._stopped = False
@@ -26,7 +29,9 @@ class Worker:
             await self._coro()
 
 
-async def run_as_worker(coro: ConsumerCoro, /, *args, **kwargs) -> None:
+async def run_as_worker(
+    coro: ConsumerCoro, /, *args: typing.Any, **kwargs: typing.Any
+) -> None:
     event_loop = asyncio.get_event_loop()
     worker = Worker(functools.partial(coro, *args, **kwargs), event_loop)
     await worker.run()

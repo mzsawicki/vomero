@@ -1,8 +1,6 @@
 import datetime
 import typing
 
-import pytest
-
 from src.vomero import Event, Streams
 
 streams = Streams(decode_responses=True)

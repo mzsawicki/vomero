@@ -10,7 +10,7 @@ AUTO_CLAIM_TIMEOUT_DEFAULT = 60
 
 
 class Streams:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: typing.Any):
         self._redis = redis.Redis(**kwargs)
 
     async def create_consumer_group(
@@ -28,7 +28,9 @@ class Streams:
     ) -> typing.Callable[[ProducerCoro], ProducerCoro]:
         def wrapper_decorator(producer_coro: ProducerCoro) -> ProducerCoro:
             @functools.wraps(producer_coro)
-            async def wrapper_producer(*args, **kwargs) -> Event:
+            async def wrapper_producer(
+                *args: typing.Any, **kwargs: typing.Any
+            ) -> Event:
                 event = await producer_coro(*args, **kwargs)
                 await self._produce_event(stream, max_len, max_len_approximate, event)
                 return event
@@ -48,7 +50,9 @@ class Streams:
     ) -> typing.Callable[[ConsumerCoro], ConsumerCoro]:
         def wrapper_decorator(consumer_coro: ConsumerCoro) -> ConsumerCoro:
             @functools.wraps(consumer_coro)
-            async def wrapper_consumer(*args, **kwargs) -> typing.Any:
+            async def wrapper_consumer(
+                *args: typing.Any, **kwargs: typing.Any
+            ) -> typing.Any:
                 id_, event = None, None
                 if auto_claim:
                     id_, event = await self._auto_claim_pending_entry(
@@ -58,7 +62,7 @@ class Streams:
                     id_, event = await self._read_next_entry(
                         stream, consumer_group, consumer, block
                     )
-                if event:
+                if id_ and event:
                     event = _add_metadata_to_event(
                         id_, event, stream, consumer_group, consumer
                     )
@@ -96,7 +100,7 @@ class Streams:
         stream: str,
         start: typing.Optional[str] = None,
         end: typing.Optional[str] = None,
-    ) -> typing.List[typing.Tuple[typing.Union[str, bytes], Event]]:
+    ) -> typing.Any:
         start_id = start or "-"
         end_id = end or "+"
         response = await self._redis.xrange(stream, start_id, end_id)
@@ -104,7 +108,7 @@ class Streams:
 
     async def get_pending_events_count(self, stream: str, consumer_group: str) -> int:
         response = await self._redis.xpending(stream, consumer_group)
-        return response["pending"]
+        return int(response["pending"])
 
     async def flush_all(self) -> None:
         await self._redis.flushall()
@@ -144,7 +148,7 @@ class Streams:
             return None, None
 
     async def _acknowledge(
-        self, stream: str, consumer_group: str, entry_id: bytes
+        self, stream: str, consumer_group: str, entry_id: IdType
     ) -> None:
         await self._redis.xack(stream, consumer_group, entry_id)
 
