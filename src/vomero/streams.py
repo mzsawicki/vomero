@@ -59,7 +59,9 @@ class Streams:
                         stream, consumer_group, consumer, block
                     )
                 if event:
-                    event = _add_metadata_to_event(id_, event, stream, consumer_group, consumer)
+                    event = _add_metadata_to_event(
+                        id_, event, stream, consumer_group, consumer
+                    )
                 coro_result = await consumer_coro(event, *args, **kwargs)
                 if id_ is not None:
                     await self._acknowledge(stream, consumer_group, id_)
@@ -148,17 +150,13 @@ class Streams:
 
 
 def _add_metadata_to_event(
-    id_: IdType,
-    event: Event,
-    stream: str,
-    consumer_group: str,
-    consumer: str
+    id_: IdType, event: Event, stream: str, consumer_group: str, consumer: str
 ) -> Event:
     enriched_event = {
         "_id": id_,
         "_stream": stream,
         "_consumer_group": consumer_group,
         "_consumer": consumer,
-        **event
+        **event,
     }
     return enriched_event
