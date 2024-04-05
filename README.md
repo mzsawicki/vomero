@@ -1,5 +1,5 @@
 # Vomero
-___
+
 Vomero is event processing mini-library based  on Redis Streams.
 Currently still **work in progress**, although core features are already in place. The library is meant to not provide
 too much abstraction over Redis, so it's advised to get familiar with key concepts of Redis Streams itself before usage.
