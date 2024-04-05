@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "vomero"
-version = "0.1.0"
+version = "0.1.2"
 description = "Event processing library for Python based on Redis Streams"
 authors = ["Marcin Sawicki <marcin.z.sawicki@protonmail.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/mzsawicki/vomero"
 
 [tool.poetry.dependencies]
 python = "^3.11"
