@@ -3,7 +3,7 @@ import functools
 import signal
 import typing
 
-from src.vomero.types import ConsumerCoro
+from vomero.types import ConsumerCoro
 
 
 class Worker:

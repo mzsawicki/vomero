@@ -3,7 +3,7 @@ import typing
 
 import redis.asyncio as redis
 
-from src.vomero.types import IdType, ProducerCoro, ConsumerCoro, Event
+from vomero.types import IdType, ProducerCoro, ConsumerCoro, Event
 
 MAX_STREAM_LEN_DEFAULT = 1024
 AUTO_CLAIM_TIMEOUT_DEFAULT = 60
