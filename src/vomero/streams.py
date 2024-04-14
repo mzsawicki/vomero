@@ -43,11 +43,19 @@ class Streams:
         self,
         stream: str,
         consumer_group: str,
-        consumer: str,
         block: int = 0,
         auto_claim: bool = False,
         auto_claim_timeout: int = AUTO_CLAIM_TIMEOUT_DEFAULT,
+        consumer: typing.Optional[str] = None,
+        consumer_factory: typing.Optional[typing.Callable[..., str]] = None,
     ) -> typing.Callable[[ConsumerCoro], ConsumerCoro]:
+
+        if consumer_factory is not None:
+            consumer = consumer_factory()
+
+        if consumer is None:
+            raise ValueError("Either consumer or consumer_factory must be defined")
+
         def wrapper_decorator(consumer_coro: ConsumerCoro) -> ConsumerCoro:
             @functools.wraps(consumer_coro)
             async def wrapper_consumer(

@@ -13,12 +13,10 @@ async def produce() -> Event:
 @streams.consumer(
     stream="additional-parameters",
     consumer_group="example-group",
-    consumer="example-consumer"
+    consumer="example-consumer",
 )
 async def consume_with_additional_parameters(
-        event: typing.Optional[Event],
-        arg_: int,
-        kwarg_: str = "abc"
+    event: typing.Optional[Event], arg_: int, kwarg_: str = "abc"
 ) -> typing.Tuple[int, str]:
     if event:
         return arg_, kwarg_
